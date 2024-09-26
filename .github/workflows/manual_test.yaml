@@ -1,0 +1,48 @@
+name: Check GH Runner
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [successful_release]
+
+env:
+  # BUCKET_NAME : "BUCKET-NAME"
+  AWS_REGION : "us-east-1"
+  AWS_ACCOUNT: 739275441922
+# permission can be added at job level or workflow level
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+jobs:
+  runAWSCommands:
+    runs-on: ubuntu-latest
+  # This is required for actions/checkout
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::739275441922:role/2302372-GITHUB-OIDC-ROLE
+          # role-session-name: samplerolesession
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Provide a self hosted to execute this job
+        uses: PasseiDireto/gh-runner-task-action@main
+        with:
+          github_pat: ${{ secrets.PD_BOT_GITHUB_ACCESS_TOKEN }}
+          task_definition: "gh-runner"
+          cluster: "gh-runner"
+          task_count: 3
+
+  runs-dummy-action:
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [3.7, 3.8, 3.9]
+    needs: pre-job-test
+    container: python:${{ matrix.version }}-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - run: python --version
