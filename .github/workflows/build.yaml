@@ -46,16 +46,14 @@ jobs:
         DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
         DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+
     - uses: docker/setup-buildx-action@v2  
     - name: Build the Docker image  
       run: docker build --build-arg RUNNER_VERSION=2.319.1 -t supdude/gh-runner .
-      - name: Docker Build and Push
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: |
-            supdude/gh-runner:latest
-            supdude/gh-runner:${{ env.TAG }}
+    - name: Push to Dockerhub
+      run: docker push supdude/gh-runner
+    - name: Pull Docker image
+      run: sudo docker pull supdude/gh-runner
 
   trigger-test-workflow:
     name: Triggers simple test workflow to ensure everything still working as expected
